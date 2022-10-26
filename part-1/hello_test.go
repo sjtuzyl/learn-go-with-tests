@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"math/rand"
+	"testing"
+)
 
 // 编写测试
 // 1. xxx_test.go
@@ -12,5 +15,11 @@ func TestHello(t *testing.T) {
 
 	if got != want {
 		t.Errorf("got '%q' want '%q'", got, want)
+	}
+}
+
+func BenchmarkRandInt(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		rand.Int()
 	}
 }

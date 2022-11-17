@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	serv := &server.PlayerServer{Store: server.NewStuPlayerStore()}
+	serv := server.NewPlayerServer(server.NewStuPlayerStore())
 
 	if err := http.ListenAndServe(":5000", serv); err != nil {
 		log.Fatalf("could not listen on port 5000 %v", err)

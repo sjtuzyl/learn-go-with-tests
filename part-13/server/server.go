@@ -6,10 +6,19 @@ import (
 )
 
 type PlayerServer struct {
-	Store PlayerStore
+	store  PlayerStore
+	router *http.ServeMux
 }
 
 func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.router.ServeHTTP(w, r)
+}
+
+func (p *PlayerServer) leagueHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (p *PlayerServer) playersHandler(w http.ResponseWriter, r *http.Request) {
 	player := r.URL.Path[len("/players/"):]
 	switch r.Method {
 	case http.MethodPost:
@@ -20,7 +29,7 @@ func (p *PlayerServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
-	score := p.Store.GetPlayerScore(player)
+	score := p.store.GetPlayerScore(player)
 	if score == 0 {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -28,32 +37,18 @@ func (p *PlayerServer) showScore(w http.ResponseWriter, player string) {
 }
 
 func (p *PlayerServer) processWin(w http.ResponseWriter, player string) {
-	p.Store.RecordWin(player)
+	p.store.RecordWin(player)
 	w.WriteHeader(http.StatusAccepted)
 }
 
-type PlayerStore interface {
-	GetPlayerScore(name string) int
-	RecordWin(name string)
-}
+func NewPlayerServer(store PlayerStore) *PlayerServer {
+	p := &PlayerServer{
+		store,
+		http.NewServeMux(),
+	}
 
-type StubPlayerStore struct {
-	scores   map[string]int
-	winCalls []string
-}
+	p.router.Handle("/league", http.HandlerFunc(p.leagueHandler))
+	p.router.Handle("/players/", http.HandlerFunc(p.playersHandler))
 
-func (s *StubPlayerStore) GetPlayerScore(name string) int {
-	score := s.scores[name]
-	return score
-}
-
-func (s *StubPlayerStore) RecordWin(name string) {
-	s.winCalls = append(s.winCalls, name)
-	s.scores[name]++
-}
-
-func NewStuPlayerStore() *StubPlayerStore {
-	return &StubPlayerStore{
-		scores:   map[string]int{},
-		winCalls: []string{}}
+	return p
 }
